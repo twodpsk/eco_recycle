@@ -179,7 +179,22 @@ class _ShopScreenState extends State<ShopScreen> {
 
               children: [
                 //------------------------------------
-                //        스프레이 섹션
+                // 스프레이 영역 제목
+                //------------------------------------
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 6),
+                  child: Text(
+                    "💦 물뿌리개",
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ),
+
+                //------------------------------------
+                // 스프레이 섹션
                 //------------------------------------
                 SizedBox(
                   height: 160,
@@ -250,7 +265,22 @@ class _ShopScreenState extends State<ShopScreen> {
                 const SizedBox(height: 30),
 
                 //------------------------------------
-                //        드레스 섹션
+                // 드레스 영역 제목
+                //------------------------------------
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 6),
+                  child: Text(
+                    "👗 드레스 업",
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ),
+
+                //------------------------------------
+                // 드레스 섹션
                 //------------------------------------
                 GridView.builder(
                   shrinkWrap: true,
@@ -267,12 +297,14 @@ class _ShopScreenState extends State<ShopScreen> {
                     final int state = dressState[index];
 
                     String btnText;
-                    Color btnColor = Colors.green;
+                    Color btnColor;
 
                     if (state == 0) {
                       btnText = "착용해보기";
+                      btnColor = Colors.green;
                     } else if (state == 1) {
                       btnText = "구매하기";
+                      btnColor = Colors.red; // 착용해보기 → 구매하기 시 빨강
                     } else {
                       btnText = "착용 중";
                       btnColor = Colors.grey;
@@ -327,12 +359,11 @@ class _ShopScreenState extends State<ShopScreen> {
                                   ? null
                                   : () async {
                                 if (state == 0) {
-                                  // 착용해보기 → 구매하기
                                   setState(() {
                                     for (int i = 0; i < dressState.length; i++) {
                                       if (dressState[i] != 2) dressState[i] = 0;
                                     }
-                                    dressState[index] = 1;
+                                    dressState[index] = 1; // 착용해보기 → 구매하기
                                     topImage = dress['image'];
                                   });
                                   return;

@@ -282,21 +282,21 @@ class _HomeScreenState extends State<HomeScreen> {
                           width: 200,
                           child: ShortsTipsWidget(
                               videoId: 'jBmjwMbgcQ8',
-                              title: '분리수거 간단한 팁'),
+                              title: '       분리수거 간단한 팁'),
                         ),
                         const SizedBox(width: 10),
                         SizedBox(
                           width: 200,
                           child: ShortsTipsWidget(
                               videoId: 'N2SmNNjqjkQ',
-                              title: '깨진 유리병 안전하게 버리는 법'),
+                              title: '깨진 유리병 안전하게 버리기'),
                         ),
                         const SizedBox(width: 10),
                         SizedBox(
                           width: 200,
                           child: ShortsTipsWidget(
                               videoId: 'J75SzKhnADA',
-                              title: '분리수거 꿀템'),
+                              title: '          분리수거 꿀템'),
                         ),
                       ],
                     ),

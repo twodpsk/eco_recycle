@@ -121,18 +121,31 @@ class _MapViewState extends State<MapView> {
       address: "서울 중랑구 봉화산로22길 2 (중화동)",
       position: const LatLng(37.600, 127.095),
       description:
-      "중랑구 최초 제로웨이스트샵 & 리필 스테이션.\n🌿 플라스틱 포장 없는 생활용품, 리필 세제, 친환경 제품 판매.\n🌱 제로웨이스트 문화 및 환경 교육 지향.",
+      "기후위기 시대에 발맞춰 동네 가까운 곳에서 제로웨이스트와 환경교육을 만날 수 있는 커뮤니티 플랫폼입니다.\n\n"
+          "🌿 플라스틱으로 만든 제품은 거의 없으며, 천연수세미, 비건 주방비누, 대나무 칫솔, 다회용 화장솜 등 모두 친환경 물품입니다.\n"
+          "📦 포장도 간소화되어 있으며, 집에서 가져온 용기에 원하는 만큼 담을 수 있는 리필세제도 판매합니다.\n"
+          "🧴 주방세제, 섬유유연제, 세탁세제 3종류가 있으며, 미처 용기를 준비하지 못했다면 가게에서 구매 가능.",
       eventInfo:
-      "🗓 주말 친환경 워크숍 / 리필 제품 판매 / 환경교육 프로그램 (운영 일정은 매장 문의)",
+      "🗓 매월 다양한 주제로 환경교육 진행: '면월경대 만들기', '쓰레기 줄이기 꿀팁 나누기', '양말목 변신' 등\n"
+          "⏰ 운영시간: 월~토 12:00~20:00, 일요일·공휴일 휴무\n"
+          "💬 류경기 중랑구청장: '지구와 마을과 살림에 보탬이 되는 보탬상점에 많이 방문해주시길 바랍니다. 환경보호와 제로웨이스트 문화를 확산시키겠습니다.'",
     ),
+
     _Shop(
-      name: "아름다운가게 강동점",
-      address: "서울 강동구 천호대로 1095",
-      position: const LatLng(37.5384, 127.1407),
+      name: "보탬상점",
+      address: "서울 중랑구 봉화산로22길 2 (중화동)",
+      position: const LatLng(37.600, 127.095),
       description:
-      "지역사회와 함께하는 친환경 나눔 공간.\n👕 중고 물품 기부 및 판매로 자원순환 실천.\n📚 옷, 책, 생활용품 등 다양한 품목 제공.",
-      eventInfo: "🗓 물품 기부 캠페인 / 재활용 교육 워크숍",
+      "💚 제로웨이스트 & 친환경 커뮤니티 플랫폼\n"
+          "🌿 플라스틱 없는 생활용품: 천연수세미, 비건 주방비누, 대나무 칫솔 등\n"
+          "🧴 리필세제 판매: 주방세제, 섬유유연제, 세탁세제\n"
+          "📦 포장 최소화, 용기 지참 가능",
+      eventInfo:
+      "🗓 환경교육 프로그램 진행\n"
+          "예: 면월경대 만들기, 쓰레기 줄이기 꿀팁 나누기, 양말목 재활용\n"
+          "⏰ 운영시간: 월~토 12:00~20:00, 일요일·공휴일 휴무",
     ),
+
     _Shop(
       name: "면목 에코센터",
       address: "서울 중랑구 면목동 200-1",
@@ -226,9 +239,9 @@ class _MapViewState extends State<MapView> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.35,
+        initialChildSize: 0.38,
         minChildSize: 0.2,
-        maxChildSize: 0.8,
+        maxChildSize: 0.85,
         builder: (_, controller) {
           return Container(
             padding: const EdgeInsets.all(16),
@@ -262,26 +275,46 @@ class _MapViewState extends State<MapView> {
                 Text(
                   s.name,
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Colors.green,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Text(
                   s.description,
-                  style: const TextStyle(fontSize: 14, height: 1.5),
+                  style: const TextStyle(fontSize: 15, height: 1.6),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  "🗓 ${s.eventInfo}",
-                  style: const TextStyle(
-                      fontSize: 13, fontStyle: FontStyle.italic),
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.event, size: 16, color: Colors.green),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        s.eventInfo,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  "📍 ${s.address}",
-                  style: const TextStyle(fontSize: 13),
+                const SizedBox(height: 6),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.location_on, size: 16, color: Colors.red),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        s.address,
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
