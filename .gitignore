@@ -1,0 +1,6 @@
+# Flutter & Firebase
+build/
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+.env
+lib/api_key.dart
