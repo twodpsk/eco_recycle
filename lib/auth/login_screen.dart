@@ -86,7 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 100),
               const Icon(Icons.recycling, size: 80, color: Colors.teal),
               const SizedBox(height: 20),
-              const Text('에코봇 로그인',
+              const Text('EcoRecycle',
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.teal)),
               const SizedBox(height: 40),
 

@@ -25,7 +25,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> with TickerProviderStateM
   final FlutterTts _flutterTts = FlutterTts();
 
   // ★ API 키 (본인 키 유지)
-  final String _apiKey = 'AIzaSyDG0mjnHElZ0FZWcZNT1kvD0TB377N7ui0';
+  final String _apiKey = 'AIzaSyAkTQaSkER5FfdL03liq-j0gEGa9PwVxv0';
 
   late final GenerativeModel _model;
   late final ChatSession _chatSession;

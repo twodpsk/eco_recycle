@@ -1,12 +1,11 @@
-import 'dart:convert'; // [추가] JSON 변환용
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:google_generative_ai/google_generative_ai.dart'; // [추가] Gemini 패키지
-
+// [추가] AI 기능을 위해 패키지 추가
+import 'package:google_generative_ai/google_generative_ai.dart';
 
 class CertUploadScreen extends StatefulWidget {
   const CertUploadScreen({super.key});
@@ -19,129 +18,125 @@ class _CertUploadScreenState extends State<CertUploadScreen> {
   final TextEditingController _textController = TextEditingController();
   File? _selectedImage;
   bool _isUploading = false;
-  final User? user = FirebaseAuth.instance.currentUser;
 
-  // ==========================================
-  // ★ [추가 1] Gemini 관련 변수 및 초기화
-  // ==========================================
-  final String _apiKey = 'AIzaSyDG0mjnHElZ0FZWcZNT1kvD0TB377N7ui0'; // API 키
-  late final GenerativeModel _model;
+  // [추가] AI 분석 중인지 확인하는 변수
+  bool _isAnalyzing = false;
 
-  List<String> _suggestedTags = []; // 추천 태그 저장
-  bool _isAnalyzing = false; // 분석 로딩 상태
+  // [추가] Gemini API 키 (챗봇과 동일한 키)
+  final String _apiKey = 'AIzaSyAkTQaSkER5FfdL03liq-j0gEGa9PwVxv0';
 
-  @override
-  void initState() {
-    super.initState();
-    // 모델 초기화
-    _model = GenerativeModel(
-      model: 'gemini-2.5-flash',
-      apiKey: _apiKey,
-      generationConfig: GenerationConfig(responseMimeType: 'application/json'),
-    );
-  }
+  // [중요] 포인트가 증발하지 않도록 아까 정한 '고정 아이디'를 사용합니다.
+  final String fixedUid = 'bJbHdxlvXEYDPTExiZsDz4q96g32 ';
 
-  // ==========================================
-  // ★ [추가 2] 이미지 분석 함수
-  // ==========================================
-  Future<void> _analyzeImageForTags(XFile imageFile) async {
-    setState(() {
-      _isAnalyzing = true;
-      _suggestedTags = []; // 기존 태그 초기화
-    });
-
-    try {
-      final bytes = await imageFile.readAsBytes();
-      final content = [
-        Content.multi([
-          TextPart('이 사진을 보고 환경 실천 인증에 어울리는 짧은 한글 태그 3~5개를 추천해줘. JSON 형식 {"tags": ["텀블러", "카페", ...]} 으로만 답해.'),
-          DataPart('image/jpeg', bytes),
-        ])
-      ];
-
-      final response = await _model.generateContent(content);
-
-      if (response.text != null) {
-        // JSON 파싱
-        final data = jsonDecode(response.text!);
-        if (mounted) {
-          setState(() {
-            _suggestedTags = List<String>.from(data['tags']);
-          });
-        }
-      }
-    } catch (e) {
-      print("태그 생성 실패: $e");
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isAnalyzing = false;
-        });
-      }
-    }
-  }
-
-  // 이미지 선택 함수 (수정됨)
+  // ------------------------------------------------------------------------
+  // 1. 이미지 선택 및 AI 자동 분석 함수
+  // ------------------------------------------------------------------------
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80, // 용량 최적화
+    );
 
     if (pickedFile != null) {
       setState(() {
         _selectedImage = File(pickedFile.path);
+        _textController.text = ""; // 기존 텍스트 초기화
       });
 
-      // ★ 사진 선택 후 바로 분석 시작
-      _analyzeImageForTags(pickedFile);
+      // ★ 사진을 고르자마자 AI 분석 시작!
+      await _analyzeImage(pickedFile);
     }
   }
 
-  // 업로드 로직 (기존과 동일)
+  // ------------------------------------------------------------------------
+  // 2. Gemini AI 이미지 분석 로직
+  // ------------------------------------------------------------------------
+  Future<void> _analyzeImage(XFile imageFile) async {
+    setState(() => _isAnalyzing = true); // 로딩 시작
+
+    try {
+      final model = GenerativeModel(
+        model: 'gemini-2.5-flash',
+        apiKey: _apiKey,
+      );
+
+      final imageBytes = await imageFile.readAsBytes();
+
+      // 프롬프트: 해시태그를 뽑아달라고 요청
+      final prompt = TextPart("이 쓰레기 사진을 분석해서 관련된 해시태그를 3개에서 5개 사이로 추천해줘. 예시: #플라스틱 #생수병 #환경보호. 설명 없이 해시태그만 출력해.");
+
+      final content = [
+        Content.multi([prompt, DataPart('image/jpeg', imageBytes)])
+      ];
+
+      final response = await model.generateContent(content);
+
+      if (response.text != null && mounted) {
+        setState(() {
+          // AI가 써준 해시태그를 입력창에 자동으로 채워넣기
+          _textController.text = response.text!;
+        });
+      }
+    } catch (e) {
+      print("AI 분석 실패: $e");
+      if(mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("AI 분석에 실패했어요. 직접 입력해주세요!")));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isAnalyzing = false); // 로딩 끝
+      }
+    }
+  }
+
+  // ------------------------------------------------------------------------
+  // 3. 업로드 및 포인트 지급 (고정 아이디 적용)
+  // ------------------------------------------------------------------------
   Future<void> _uploadCertification() async {
     if (_textController.text.isEmpty || _selectedImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("사진과 내용을 모두 입력해주세요!")));
       return;
     }
-    if (user == null) return;
 
     setState(() => _isUploading = true);
 
     try {
-      // 1. 스토리지 업로드
+      // (1) 스토리지 업로드
       final String fileName = DateTime.now().millisecondsSinceEpoch.toString();
       final Reference storageRef = FirebaseStorage.instance.ref().child('certifications/$fileName.jpg');
       await storageRef.putFile(_selectedImage!);
       final String imageUrl = await storageRef.getDownloadURL();
 
-      // 2. DB 저장
+      // (2) DB 저장 (user!.uid 대신 fixedUid 사용!)
       await FirebaseFirestore.instance.collection('certifications').add({
-        'uid': user!.uid,
+        'uid': fixedUid, // ★ 고정 아이디로 저장해야 내역이 보임
         'description': _textController.text,
         'imageUrl': imageUrl,
         'timestamp': FieldValue.serverTimestamp(),
       });
 
-      // 3. 포인트 지급
-      final userRef = FirebaseFirestore.instance.collection('users').doc(user!.uid);
+      // (3) 포인트 지급 (user!.uid 대신 fixedUid 사용!)
+      final userRef = FirebaseFirestore.instance.collection('users').doc(fixedUid);
+
       await FirebaseFirestore.instance.runTransaction((transaction) async {
         final snapshot = await transaction.get(userRef);
         if (snapshot.exists) {
           int currentPoint = snapshot.data()?['point'] ?? 0;
           transaction.update(userRef, {'point': currentPoint + 100});
+        } else {
+          // 만약 문서가 없으면 새로 생성 (안전장치)
+          transaction.set(userRef, {'point': 100});
         }
       });
 
-      // 4. 내역 저장
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user!.uid)
-          .collection('recycling_history') // 마이페이지가 찾는 경로
-          .add({
-        'itemName': '분리배출 인증',
-        'point': 100,
+      // (4) 내역 저장
+      await FirebaseFirestore.instance.collection('point_history').add({
+        'uid': fixedUid, // ★ 고정 아이디
+        'amount': 100,
         'description': '분리배출 인증 보상',
         'type': 'earn',
-        'date': FieldValue.serverTimestamp(),
+        'timestamp': FieldValue.serverTimestamp(),
       });
 
       if (mounted) {
@@ -152,7 +147,9 @@ class _CertUploadScreenState extends State<CertUploadScreen> {
       print("오류: $e");
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("업로드 실패")));
     } finally {
-      setState(() => _isUploading = false);
+      if (mounted) {
+        setState(() => _isUploading = false);
+      }
     }
   }
 
@@ -160,16 +157,17 @@ class _CertUploadScreenState extends State<CertUploadScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("인증 글쓰기", style: TextStyle(color: Colors.white)),
+        title: const Text("인증 글쓰기", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.green,
         iconTheme: const IconThemeData(color: Colors.white),
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 이미지 표시 영역
+            // 이미지 선택 영역
             GestureDetector(
               onTap: _pickImage,
               child: Container(
@@ -177,90 +175,81 @@ class _CertUploadScreenState extends State<CertUploadScreen> {
                 decoration: BoxDecoration(
                   color: Colors.grey[200],
                   borderRadius: BorderRadius.circular(15),
+                  border: Border.all(color: Colors.grey[300]!),
                 ),
                 child: _selectedImage != null
                     ? ClipRRect(
                   borderRadius: BorderRadius.circular(15),
-                  child: Image.file(_selectedImage!, fit: BoxFit.cover),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image.file(_selectedImage!, fit: BoxFit.cover),
+                      // 분석 중일 때 이미지 위에 로딩 표시
+                      if (_isAnalyzing)
+                        Container(
+                          color: Colors.black45,
+                          child: const Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CircularProgressIndicator(color: Colors.white),
+                                SizedBox(height: 10),
+                                Text("AI가 사진을 분석 중...🤖", style: TextStyle(color: Colors.white))
+                              ],
+                            ),
+                          ),
+                        )
+                    ],
+                  ),
                 )
-                    : const Icon(Icons.add_a_photo, size: 50, color: Colors.grey),
-              ),
-            ),
-
-            // ==========================================
-            // ★ [추가 3] 태그 추천 UI
-            // ==========================================
-            const SizedBox(height: 10),
-            if (_isAnalyzing)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 10),
-                child: Row(
+                    : Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    SizedBox(width: 15, height: 15, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.green)),
-                    SizedBox(width: 10),
-                    Text("AI가 태그를 분석 중입니다...", style: TextStyle(fontSize: 13, color: Colors.grey)),
+                    const Icon(Icons.add_a_photo_rounded, size: 50, color: Colors.grey),
+                    const SizedBox(height: 10),
+                    Text("터치해서 쓰레기 사진 등록", style: TextStyle(color: Colors.grey[600])),
                   ],
                 ),
               ),
+            ),
+            const SizedBox(height: 20),
 
-            if (!_isAnalyzing && _suggestedTags.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text("💡 추천 태그 (클릭해서 추가)", style: TextStyle(fontSize: 12, color: Colors.green, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 5),
-                    Wrap(
-                      spacing: 8.0,
-                      runSpacing: 4.0,
-                      children: _suggestedTags.map((tag) {
-                        return ActionChip(
-                          label: Text("#$tag"),
-                          backgroundColor: Colors.green.shade50,
-                          labelStyle: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
-                          side: BorderSide.none,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                          onPressed: () {
-                            // 태그 클릭 시 텍스트 필드에 추가
-                            setState(() {
-                              String currentText = _textController.text;
-                              if (currentText.isNotEmpty && !currentText.endsWith(' ')) {
-                                currentText += ' ';
-                              }
-                              _textController.text = '$currentText#$tag ';
-                            });
-                          },
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
-              ),
-
-            // 텍스트 입력 영역
-            const SizedBox(height: 10),
+            // 텍스트 입력창 (AI가 자동 입력)
             TextField(
               controller: _textController,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                hintText: "인증 내용을 입력하세요...",
-                border: OutlineInputBorder(),
+              maxLines: 4,
+              decoration: InputDecoration(
+                hintText: "사진을 올리면 AI가 해시태그를 달아줘요! \n(직접 수정도 가능합니다)",
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                filled: true,
+                fillColor: Colors.grey[50],
+                // 분석 중일 때 입력창 오른쪽에도 로딩 표시
+                suffixIcon: _isAnalyzing
+                    ? const Padding(
+                  padding: EdgeInsets.all(12.0),
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+                    : null,
               ),
             ),
             const SizedBox(height: 20),
 
             // 업로드 버튼
             ElevatedButton(
-              onPressed: _isUploading ? null : _uploadCertification,
+              onPressed: (_isUploading || _isAnalyzing) ? null : _uploadCertification,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
-                padding: const EdgeInsets.symmetric(vertical: 15),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 3,
               ),
               child: _isUploading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text("업로드하고 포인트 받기", style: TextStyle(fontSize: 16, color: Colors.white)),
+                  ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+              )
+                  : const Text("업로드하고 100P 받기", style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
         ),

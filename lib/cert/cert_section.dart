@@ -27,7 +27,7 @@ class CertSection extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
-                Text("분리배출 인증하기",
+                Text("에코 인증하기",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 SizedBox(height: 5),
                 Text("사진 찍고 인증하면 포인트 지급!",
